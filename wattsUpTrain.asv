@@ -90,16 +90,15 @@ onAppStrDir = cat(2, onAppStr, '.mat');
 offAppStr = cat(2, appClass, 'OffFeats');
 offAppStrDir = cat(2, offAppStr, '.mat');
 if exist(onAppStrDir,'file')
-    onAppData = load(onAppStrDir);
-    offAppData = load(offAppStrDir);
-    onAppData.data = cat(1,onAppData.data,onDownSampled);
-    offAppData.data = cat(1,offAppData.data,offDownSampled);
+    load(onAppStrDir);
+    load(offAppStrDir);
+    onAppStr.data = cat(1,onAppStr.data,onDownSampled);
+    offAppStr.data = cat(1,offAppStr.data,offDownSampled);
 else
-    
+    onAppStr = 
 end
 
-save(onAppStrDir, onAppData);
-save(offAppStrDir, offAppData);
+save(onAppStrDir, onApp
 
 set(hplot(2),'YData',ds.onEvents);
 set(hplot(3),'YData',ds.offEvents);
