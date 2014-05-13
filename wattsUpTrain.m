@@ -1,4 +1,4 @@
-function wattsUpTrain(appClass, s)
+function wattsUpTrain(appClass, appClassLabel, s)
 % Serial Communication
 % Test to see if the communications object exists
 if nargin < 3 || isempty(s)
@@ -51,11 +51,11 @@ while true
     reading = textscan(output, '%*s%*s%*s%f%f%f%*s%*s%*s%*s%*s%*s%*s%*s%*s%*s%f%*s%*s%f%f;', 'delimiter',',');
     
     if ~isempty(reading{6}) % && (data.timeStamp(2) == now)
-        if(appOn == 1 & reading(1)/10 < 0.5) % if the appliance is turning off
+        if appOn == 1 & reading(1)/10 < 0.5 % if the appliance is turning off
             appOn = 0;
             break;
         end
-        if(reading(1)/10 > 0.5) % if the appliance turns on
+        if reading(1)/10 > 0.5 % if the appliance turns on
             appOn = 1;
         end
         ds.data = circshift(ds.data, 1);
@@ -90,16 +90,20 @@ onAppStrDir = cat(2, onAppStr, '.mat');
 offAppStr = cat(2, appClass, 'OffFeats');
 offAppStrDir = cat(2, offAppStr, '.mat');
 if exist(onAppStrDir,'file')
-    onAppData = load(onAppStrDir);
-    offAppData = load(offAppStrDir);
-    onAppData.data = cat(1,onAppData.data,onDownSampled);
-    offAppData.data = cat(1,offAppData.data,offDownSampled);
-else
+    onApp = load(onAppStrDir);
+    offApp = load(offAppStrDir);
+    onApp.data = cat(1,onApp.data,onDownSampled);
     
+    offApp.data = cat(1,offApp.data,offDownSampled);
+    % add targets
+    
+else
+    onApp = prtDataSetClass;
+    % put the class labels
 end
 
-save(onAppStrDir, onAppData);
-save(offAppStrDir, offAppData);
+save(onAppStrDir, onApp);
+save(offAppStrDir, offApp);
 
 set(hplot(2),'YData',ds.onEvents);
 set(hplot(3),'YData',ds.offEvents);
