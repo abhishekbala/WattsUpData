@@ -1,4 +1,4 @@
-function wattsUpDemo2(s)
+function wattsUpClassify(s)
 % Serial Communication
 % Test to see if the communications object exists
 if nargin < 2 || isempty(s)
@@ -10,6 +10,22 @@ end
 % Test to see if the communications channel is open
 if ~strcmp(s.Status,'open')
     fopen(s);
+end
+
+%% Set up data directory
+% Set up path to data directory
+dataDir = 'C:\Users\Abhishek B\Documents\My Documents\My Duke Documents\Coursework\Energy 596 - Bass Connections in Energy\MATLAB Disagggregation Models\WattsUpData\';
+matFiles = prtUtilSubDir(dataDir,'*.mat');
+
+for iFile = 1:length(matFiles)
+    cFile = matFiles{iFile};
+    loadedStuff = load(cFile);
+    
+    if iFile == 1
+        allData = loadedStuff;
+    else
+        allData = catObservations(allData,loadedStuff);
+    end
 end
 
 %% Watts up communication, why?
@@ -67,10 +83,24 @@ while true
     detectedOnEvents = detectedEvents.onEvents;
     detectedOffEvents = detectedEvents.offEvents;
     detectedOnIndex = detectedEvents.onEventsIndex;
-    detectedOffIndex = detectedEvents.offEventsIndex;
-    
+    detectedOffIndex = detectedEvents.offEventsIndex;    
     ds.onEvents(detectedOnIndex) = detectedOnEvents;
     ds.offEvents(detectedOffIndex) = detectedOffEvents;
+    
+    % On Event Classification
+    % Downsample to _ s surrounding the on event.
+    numSecsIncluded = 10;
+    onOneAroundCols = detectedOnIndex - numSecsIncluded:detectedOnIndex + numSecsIncluded;
+    onSet = allData.retainFeatures(onOneAroundCols);
+    % Run PCA. Keep top 20 components.
+    nPcaComps = 20;
+    pca = prtPreProcPca('nComponents',nPcaComps);
+    pca = pca.train(onSet);
+    onSet2 = pca.run(onSet);
+    $
+    
+    % Off Event Classification
+
     
     set(hplot(1),'YData',ds.data);
     set(hplot(2),'YData',ds.onEvents);
