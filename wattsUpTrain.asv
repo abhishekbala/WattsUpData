@@ -98,14 +98,12 @@ fullLabel = ds.classLabel;
 onOneAroundCols = detectedOnIndex - numSecsIncluded:detectedOnIndex + numSecsIncluded;
 onAppDownSampled = fullSet(onOneAroundCols);
 onLabel = fullLabel(onOneAroundCols);
-onLabel = onLabel';
 onDownSampled = prtDataSetClass(onAppDownSampled, onLabel);
 %onDownSampled = struct(onDownSampled);
 
 offOneAroundCols = detectedOffIndex - numSecsIncluded:detectedOffIndex + numSecsIncluded;
 offAppDownSampled = fullSet(offOneAroundCols);
 offLabel = fullLabel(offOneAroundCols);
-offLabel = offLabel';
 offDownSampled = prtDataSetClass(offAppDownSampled, offLabel);
 %offDownSampled = struct(offDownSampled);
 
@@ -113,10 +111,10 @@ offDownSampled = prtDataSetClass(offAppDownSampled, offLabel);
 onAppStr = cat(2, appClass, 'OnFeats.mat');
 offAppStr = cat(2, appClass, 'OffFeats.mat');
 if exist(onAppStr,'file')
-    x = load(onAppStr);
-    y = load(offAppStr);
-    onApp = x.onApp;
-    offApp = y.offApp;
+    onApp = load(onAppStr);
+    offApp = load(offAppStr);
+    onApp = onApp(1);
+    offApp = offApp(1);
     onApp = catObservations(onApp, onDownSampled);
     offApp = catObservations(offApp, offDownSampled);    
 else
