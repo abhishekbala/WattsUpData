@@ -21,32 +21,28 @@ load('INCOnFeats.mat')
 %load('fanOnFeats.mat')
 fullSet = catObservations(onApp, offApp);%, CFLOnFeats, CFLOffFeats, fanOnFeats, fanOffFeats);
 
-%% Watts up communication, why?
+%% Watts up communication
 % nBytes = s.BytesAvailable;
-
 % Send command to Watts Up device
-fprintf(s,'#H,R,0;') % Header request
-fscanf(s)
-fprintf(s,'#C,W,18,1,1,1,0,0,0,0,0,0,0,0,0,0,1,0,0,1,1;')
-fscanf(s)
-fprintf(s,'#S,W,2,0,1;')
+fprintf(s,'#H,R,0;'); % Header request
 fscanf(s);
-fprintf(s,'#L,W,3,E,0,1;')
+fprintf(s,'#C,W,18,1,1,1,0,0,0,0,0,0,0,0,0,0,1,0,0,1,1;');
 fscanf(s);
-
-arraySize = 200;
+fprintf(s,'#S,W,2,0,1;');
+fscanf(s);
+fprintf(s,'#L,W,3,E,0,1;');
+fscanf(s);
 
 % Data Collection
+arraySize = 200;
 ds.data = zeros(arraySize,1);
 ds.onEvents = nan(arraySize,1);
 ds.offEvents = nan(arraySize,1);
+ds.classID = cell(arraySize,1);
 ds.windowLength = 51;
 ds.bufferLength = 6;
 ds.threshold = 0.5;
 ds.smoothFactor = 0.5;
-
-% ds.allOnEvents = zeros(1);
-% ds.allOffEvents = zeros(1);
 
 figure(1)
 clf;
@@ -90,7 +86,6 @@ while true
         numSecsIncluded = 5;
         oneAroundCols = detectedOnIndex - numSecsIncluded:detectedOnIndex + numSecsIncluded;
         onDownSampled = onTestSet(oneAroundCols);
-        %downSampled = fullSet.retainFeatures(oneAroundCols);
         
         % Run PCA. Keep top 20 components.
         nPcaComps = 5;
@@ -112,6 +107,7 @@ while true
           kClassified = onOuts.uniqueClasses(classIdx);
           % classDecision
         end
+        
     end
     
     %% Off Event Classification

@@ -1,9 +1,12 @@
-function wattsUpTrain(appClass, appClassLabel, s)
+function wattsUpTrain(appClass, s)
+% appClass - a string that names the appliance and is used to look up the
+% appliance in memory
+% get rid of appClassLabel, use appClass to generate these indices
+
 % Serial Communication
 % Test to see if the communications object exists
-if nargin < 3 || isempty(s)
+if nargin < 2 || isempty(s)
     s = serial('COM4', 'BaudRate', 115200);
-    
     cleanerUpper = onCleanup(@()fclose(s));
 end
 
@@ -16,19 +19,33 @@ end
 % nBytes = s.BytesAvailable;
 
 % Send command to Watts Up device
-fprintf(s,'#H,R,0;') % Header request
-fscanf(s)
-fprintf(s,'#C,W,18,1,1,1,0,0,0,0,0,0,0,0,0,0,1,0,0,1,1;')
-fscanf(s)
-fprintf(s,'#S,W,2,0,1;')
+fprintf(s,'#H,R,0;'); % Header request
 fscanf(s);
-fprintf(s,'#L,W,3,E,0,1;')
+fprintf(s,'#C,W,18,1,1,1,0,0,0,0,0,0,0,0,0,0,1,0,0,1,1;');
 fscanf(s);
+fprintf(s,'#S,W,2,0,1;');
+fscanf(s);
+fprintf(s,'#L,W,3,E,0,1;');
+fscanf(s);
+
+% Determining label
+switch appClass
+    case 'INC'
+        onClassLabel = 1;
+        offClassLabel = 2;
+    case 'CFL'
+        onClassLabel = 3;
+        offClassLabel = 4;
+    case 'Fan'
+        onClassLabel = 5;
+        offClassLabel = 6;
+end
 
 % Data Collection
 arraySize = 200;
 ds.data = zeros(arraySize,1);
-ds.classLabel = ones(arraySize,1) * appClassLabel;
+ds.onClassLabel = ones(arraySize,1) * onClassLabel;
+ds.offClassLabel = ones(arraySize,1) * offClassLabel;
 ds.onEvents = nan(arraySize,1);
 ds.offEvents = nan(arraySize,1);
 ds.windowLength = 51;
@@ -92,22 +109,20 @@ drawnow;
 % Downsample to intervals surrounding the central on and off events.
 numSecsIncluded = 5;
 fullSet = ds.data';
-fullLabel = ds.classLabel;
-%fullSet = prtDataSetClass(ds.data, ds.classLabel);
+fullOnLabel = ds.onClassLabel;
+fullOffLabel = ds.offClassLabel;
 
 onOneAroundCols = detectedOnIndex - numSecsIncluded:detectedOnIndex + numSecsIncluded;
 onAppDownSampled = fullSet(onOneAroundCols);
-onLabel = fullLabel(onOneAroundCols);
+onLabel = fullOnLabel(onOneAroundCols);
 onLabel = onLabel';
 onDownSampled = prtDataSetClass(onAppDownSampled, onLabel);
-%onDownSampled = struct(onDownSampled);
 
 offOneAroundCols = detectedOffIndex - numSecsIncluded:detectedOffIndex + numSecsIncluded;
 offAppDownSampled = fullSet(offOneAroundCols);
-offLabel = fullLabel(offOneAroundCols);
+offLabel = fullOffLabel(offOneAroundCols);
 offLabel = offLabel';
 offDownSampled = prtDataSetClass(offAppDownSampled, offLabel);
-%offDownSampled = struct(offDownSampled);
 
 % Load the appliance's data:
 onAppStr = cat(2, appClass, 'OnFeats.mat');
