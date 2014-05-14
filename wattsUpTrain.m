@@ -28,6 +28,7 @@ fscanf(s);
 % Data Collection
 arraySize = 200;
 ds.data = zeros(arraySize,1);
+ds.classLabel = ones(arraySize,1) * appClassLabel;
 ds.onEvents = nan(arraySize,1);
 ds.offEvents = nan(arraySize,1);
 ds.windowLength = 51;
@@ -45,27 +46,33 @@ set(gca, 'xdir', 'reverse');
 drawnow;
 
 appOn = 0;
+offCounter = 0;
 
 while true
     output = fscanf(s);
     reading = textscan(output, '%*s%*s%*s%f%f%f%*s%*s%*s%*s%*s%*s%*s%*s%*s%*s%f%*s%*s%f%f;', 'delimiter',',');
     
     if ~isempty(reading{6}) % && (data.timeStamp(2) == now)
-        if appOn == 1 & reading(1)/10 < 0.5 % if the appliance is turning off
-            appOn = 0;
-            break;
+        if appOn == 1 && reading{1}/10 < 0.5 % if the appliance is turning off
+            offCounter = offCounter + 1;
+            if offCounter >= 10
+                break;
+            end
         end
-        if reading(1)/10 > 0.5 % if the appliance turns on
+        if reading{1}/10 > 0.5 % if the appliance turns on
             appOn = 1;
+            offCounter = 0;
         end
         ds.data = circshift(ds.data, 1);
         cPower = reading{1}/10;
         ds.data(1) = cPower;
     end
-    set(hplot(1),'YData',ds.data);    
+    
+    set(hplot(1),'YData',ds.data);
     drawnow;
 end
 
+% Compute the on and off events for the interval captured.
 ds.onEvents = nan(arraySize,1);
 ds.offEvents = nan(arraySize,1);    
 detectedEvents = detectEvents(ds);
@@ -73,40 +80,45 @@ detectedOnEvents = detectedEvents.onEvents;
 detectedOffEvents = detectedEvents.offEvents;
 detectedOnIndex = detectedEvents.onEventsIndex;
 detectedOffIndex = detectedEvents.offEventsIndex;
-
 ds.onEvents(detectedOnIndex) = detectedOnEvents;
 ds.offEvents(detectedOffIndex) = detectedOffEvents;
 
-% Downsample to 10 s surrounding the central on and off events
-numSecsIncluded = 10;
-onOneAroundCols = detectedOnIndex - numSecsIncluded:detectedOnIndex + numSecsIncluded;
-onDownSampled = fullSet.retainFeatures(onOneAroundCols);
-offOneAroundCols = detectedOffIndex - numSecsIncluded:detectedOffIndex + numSecsIncluded;
-offDownSampled = fullSet.retainFeatures(offOneAroundCols);
-
-% Load the appliance's data:
-onAppStr = cat(2, appClass, 'OnFeats');
-onAppStrDir = cat(2, onAppStr, '.mat');
-offAppStr = cat(2, appClass, 'OffFeats');
-offAppStrDir = cat(2, offAppStr, '.mat');
-if exist(onAppStrDir,'file')
-    onApp = load(onAppStrDir);
-    offApp = load(offAppStrDir);
-    onApp.data = cat(1,onApp.data,onDownSampled);
-    
-    offApp.data = cat(1,offApp.data,offDownSampled);
-    % add targets
-    
-else
-    onApp = prtDataSetClass;
-    % put the class labels
-end
-
-save(onAppStrDir, onApp);
-save(offAppStrDir, offApp);
-
+% Include the on and off events on the plot to give a visual representation
+% of what observations will be added to the feature matrices.
 set(hplot(2),'YData',ds.onEvents);
 set(hplot(3),'YData',ds.offEvents);
 drawnow;
+
+% Downsample to intervals surrounding the central on and off events.
+numSecsIncluded = 5;
+fullSet = ds.data;
+fullLabel = ds.classLabel;
+%fullSet = prtDataSetClass(ds.data, ds.classLabel);
+
+onOneAroundCols = detectedOnIndex - numSecsIncluded:detectedOnIndex + numSecsIncluded;
+onAppDownSampled = fullSet(onOneAroundCols);
+onLabel = fullLabel(onOneAroundCols);
+onDownSampled = prtDataSetClass(onAppDownSampled, onLabel);
+
+offOneAroundCols = detectedOffIndex - numSecsIncluded:detectedOffIndex + numSecsIncluded;
+offAppDownSampled = fullSet(offOneAroundCols);
+offLabel = fullLabel(offOneAroundCols);
+offDownSampled = prtDataSetClass(offAppDownSampled, offLabel);
+
+% Load the appliance's data:
+onAppStr = cat(2, appClass, 'OnFeats.mat');
+offAppStr = cat(2, appClass, 'OffFeats.mat');
+if exist(onAppStr,'file')
+    onApp = load(onAppStr);
+    offApp = load(offAppStr);
+    onApp = catObservations(onApp, onDownSampled);
+    offApp = catObservations(offApp, offDownSampled);    
+else
+    onApp = onDownSampled;
+    offApp = offDownSampled;
+end
+
+save(onAppStr, 'onApp');
+save(offAppStr, 'offApp');
 
 end
