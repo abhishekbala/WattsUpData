@@ -56,12 +56,10 @@ hplot(2) = plot(ds.onEvents, 'ob');
 hplot(3) = plot(ds.offEvents, 'or');
 set(gca, 'xdir', 'reverse');
 drawnow;
-onCount = 0;
-offCount = 0;
+count = 0;
 
 while true
-    onCount = onCount+1;
-    offCount = offCount+1;
+    count = count+1;
     output = fscanf(s);
     reading = textscan(output, '%*s%*s%*s%f%f%f%*s%*s%*s%*s%*s%*s%*s%*s%*s%*s%f%*s%*s%f%f;', 'delimiter',',');
     
@@ -83,65 +81,57 @@ while true
     ds.offEvents(detectedOffIndex) = detectedOffEvents;
     
     %% On Event Classification
-    if ~isempty(detectedOnIndex) && onCount > 6
-        onCount = 0;
-        % Downsample to 5 s surrounding the central on event
-        onTestSet = ds.data';
-        numSecsIncluded = 5;
+    if ~isempty(detectedOnIndex)
+        % Downsample to 10 s surrounding the central on event
+        
+        numSecsIncluded = 10;
         oneAroundCols = detectedOnIndex - numSecsIncluded:detectedOnIndex + numSecsIncluded;
-        onDownSampled = onTestSet(oneAroundCols);
-        %downSampled = fullSet.retainFeatures(oneAroundCols);
+        downSampled = fullSet.retainFeatures(oneAroundCols);
         
         % Run PCA. Keep top 20 components.
-        nPcaComps = 5;
+        nPcaComps = 20;
         pca = prtPreProcPca('nComponents',nPcaComps);
-        pca = pca.train(fullSet);
-        onSet = pca.run(fullSet);
+        pca = pca.train(downSampled);
+        onSet = pca.run(downSampled);
     
         % Run classification.  Vary k as desired.
         for k = 8:8
           knnClassifier = prtClassKnn;
           knnClassifier.k = k;
           knnClassifier = knnClassifier.train(onSet);
-          knnClassifier = knnClassifier.run(onDownSampled);
           onOuts = knnClassifier.kfolds(onSet,5);
           onOuts.userData.components = houseData.userData.components;
 
           % Generate the confusion matrix.
           [~,classIdx] = max(onOuts.data,[],2);
           kClassified = onOuts.uniqueClasses(classIdx);
-          % classDecision
         end
     end
     
     %% Off Event Classification
-    if ~isempty(detectedOffIndex) && offCount > 6
-        offCount = 0;
-        % Downsample to 5 s surrounding the central off event
-        offTestSet = ds.data';
-        numSecsIncluded = 5;
+    if ~isempty(detectedOffIndex)
+        % Downsample to 10 s surrounding the central on event
+        numSecsIncluded = 10;
         oneAroundCols = detectedOffIndex - numSecsIncluded:detectedOffIndex + numSecsIncluded;
-        offDownSampled = offTestSet(oneAroundCols);
-        %downSampled = fullSet.retainFeatures(oneAroundCols);
+        downSampled = fullSet.retainFeatures(oneAroundCols);
         
         % Run PCA. Keep top 20 components.
-        nPcaComps = 5;
+        nPcaComps = 20;
         pca = prtPreProcPca('nComponents',nPcaComps);
-        pca = pca.train(fullSet);
-        offSet = pca.run(fullSet);
-        
+        pca = pca.train(downSampled);
+        offSet = pca.run(downSampled);
+    
         % Run classification.  Vary k as desired.
         for k = 8:8
           knnClassifier = prtClassKnn;
           knnClassifier.k = k;
           knnClassifier = knnClassifier.train(offSet);
-          knnClassifier = knnClassifier.run(offDownSampled);
-          onOuts = knnClassifier.kfolds(offSet,5);
-          onOuts.userData.components = houseData.userData.components;
+          offOuts = knnClassifier.kfolds(offSet,5);
+          offOuts.userData.components = houseData.userData.components;
 
           % Generate the confusion matrix.
-          [~,classIdx] = max(onOuts.data,[],2);
-          kClassified = onOuts.uniqueClasses(classIdx);
+          [~,classIdx] = max(offOuts.data,[],2);
+          kClassified = offOuts.uniqueClasses(classIdx);
         end
     end
     
