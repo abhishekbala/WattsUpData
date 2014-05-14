@@ -99,11 +99,13 @@ onOneAroundCols = detectedOnIndex - numSecsIncluded:detectedOnIndex + numSecsInc
 onAppDownSampled = fullSet(onOneAroundCols);
 onLabel = fullLabel(onOneAroundCols);
 onDownSampled = prtDataSetClass(onAppDownSampled, onLabel);
+%onDownSampled = struct(onDownSampled);
 
 offOneAroundCols = detectedOffIndex - numSecsIncluded:detectedOffIndex + numSecsIncluded;
 offAppDownSampled = fullSet(offOneAroundCols);
 offLabel = fullLabel(offOneAroundCols);
 offDownSampled = prtDataSetClass(offAppDownSampled, offLabel);
+%offDownSampled = struct(offDownSampled);
 
 % Load the appliance's data:
 onAppStr = cat(2, appClass, 'OnFeats.mat');

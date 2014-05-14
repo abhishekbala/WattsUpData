@@ -12,21 +12,14 @@ if ~strcmp(s.Status,'open')
     fopen(s);
 end
 
-%% Set up data directory
-% Set up path to data directory
-dataDir = 'C:\Users\Abhishek B\Documents\My Documents\My Duke Documents\Coursework\Energy 596 - Bass Connections in Energy\MATLAB Disagggregation Models\WattsUpData\';
-matFiles = prtUtilSubDir(dataDir,'*.mat');
-
-for iFile = 1:length(matFiles)
-    cFile = matFiles{iFile};
-    loadedStuff = load(cFile);
-    
-    if iFile == 1
-        allData = loadedStuff;
-    else
-        allData = catObservations(allData,loadedStuff);
-    end
-end
+%% Load all of the files.
+load('INCOffFeats.mat')
+load('INCOnFeats.mat')
+%load('CFLOnFeats.mat')
+%load('CFLOffFeats.mat')
+%load('fanOffFeats.mat')
+%load('fanOnFeats.mat')
+fullSet = catObservations(onApp, offApp);%, CFLOnFeats, CFLOffFeats, fanOnFeats, fanOffFeats);
 
 %% Watts up communication, why?
 % nBytes = s.BytesAvailable;
@@ -87,20 +80,59 @@ while true
     ds.onEvents(detectedOnIndex) = detectedOnEvents;
     ds.offEvents(detectedOffIndex) = detectedOffEvents;
     
-    % On Event Classification
-    % Downsample to _ s surrounding the on event.
-    numSecsIncluded = 10;
-    onOneAroundCols = detectedOnIndex - numSecsIncluded:detectedOnIndex + numSecsIncluded;
-    onSet = allData.retainFeatures(onOneAroundCols);
-    % Run PCA. Keep top 20 components.
-    nPcaComps = 20;
-    pca = prtPreProcPca('nComponents',nPcaComps);
-    pca = pca.train(onSet);
-    onSet2 = pca.run(onSet);
-    $
+    %% On Event Classification
+    if ~isEmpty(detectedOnEvents)
+        % Downsample to 10 s surrounding the central on event
+        numSecsIncluded = 10;
+        oneAroundCols = detectedOnIndex - numSecsIncluded:detectedOnIndex + numSecsIncluded;
+        downSampled = fullSet.retainFeatures(oneAroundCols);
+        
+        % Run PCA. Keep top 20 components.
+        nPcaComps = 20;
+        pca = prtPreProcPca('nComponents',nPcaComps);
+        pca = pca.train(downSampled);
+        onSet = pca.run(downSampled);
     
-    % Off Event Classification
+        % Run classification.  Vary k as desired.
+        for k = 8:8
+          knnClassifier = prtClassKnn;
+          knnClassifier.k = k;
+          knnClassifier = knnClassifier.train(onSet);
+          onOuts = knnClassifier.kfolds(onSet,5);
+          onOuts.userData.components = houseData.userData.components;
 
+          % Generate the confusion matrix.
+          [~,classIdx] = max(onOuts.data,[],2);
+          kClassified = onOuts.uniqueClasses(classIdx);
+        end
+    end
+    
+    %% Off Event Classification
+    if ~isNan(detectedOffEvents)
+        % Downsample to 10 s surrounding the central on event
+        numSecsIncluded = 10;
+        oneAroundCols = detectedOffIndex - numSecsIncluded:detectedOffIndex + numSecsIncluded;
+        downSampled = fullSet.retainFeatures(oneAroundCols);
+        
+        % Run PCA. Keep top 20 components.
+        nPcaComps = 20;
+        pca = prtPreProcPca('nComponents',nPcaComps);
+        pca = pca.train(downSampled);
+        offSet = pca.run(downSampled);
+    
+        % Run classification.  Vary k as desired.
+        for k = 8:8
+          knnClassifier = prtClassKnn;
+          knnClassifier.k = k;
+          knnClassifier = knnClassifier.train(offSet);
+          offOuts = knnClassifier.kfolds(offSet,5);
+          offOuts.userData.components = houseData.userData.components;
+
+          % Generate the confusion matrix.
+          [~,classIdx] = max(offOuts.data,[],2);
+          kClassified = offOuts.uniqueClasses(classIdx);
+        end
+    end
     
     set(hplot(1),'YData',ds.data);
     set(hplot(2),'YData',ds.onEvents);

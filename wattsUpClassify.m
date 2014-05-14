@@ -13,10 +13,13 @@ if ~strcmp(s.Status,'open')
 end
 
 %% Load all of the files.
-load('INCFeats.mat')
-load('CFLFeats.mat')
-load('fanFeats.mat')
-fullSet = catObservations(INCFeats, CFLFeats, fanFeats);
+load('INCOffFeats.mat')
+load('INCOnFeats.mat')
+%load('CFLOnFeats.mat')
+%load('CFLOffFeats.mat')
+%load('fanOffFeats.mat')
+%load('fanOnFeats.mat')
+fullSet = catObservations(onApp, offApp);%, CFLOnFeats, CFLOffFeats, fanOnFeats, fanOffFeats);
 
 %% Watts up communication, why?
 % nBytes = s.BytesAvailable;
@@ -78,7 +81,7 @@ while true
     ds.offEvents(detectedOffIndex) = detectedOffEvents;
     
     %% On Event Classification
-    if ~isEmpty(detectedOnIndex)
+    if ~isempty(detectedOnIndex)
         % Downsample to 10 s surrounding the central on event
         numSecsIncluded = 10;
         oneAroundCols = detectedOnIndex - numSecsIncluded:detectedOnIndex + numSecsIncluded;
@@ -105,7 +108,7 @@ while true
     end
     
     %% Off Event Classification
-    if ~isEmpty(detectedOffIndex)
+    if ~isempty(detectedOffIndex)
         % Downsample to 10 s surrounding the central on event
         numSecsIncluded = 10;
         oneAroundCols = detectedOffIndex - numSecsIncluded:detectedOffIndex + numSecsIncluded;
