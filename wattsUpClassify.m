@@ -119,16 +119,16 @@ while true
         hArray = [];
     end
     
-    %% On Event Classification
+    %% Event Classification
     for j=1:length(detectedIndices)
         i = detectedIndices(j);
         if ~isempty(i) && i > 5 && i < 195
             % Extract features: 5 s surrounding the central on event
-            onTestSet = ds.data';
+            testSet = ds.data';
             numSecsIncluded = 5;
-            onOneAroundCols = i - numSecsIncluded:i + numSecsIncluded;
-            onExtracted = onTestSet(onOneAroundCols);
-            onExtracted = prtDataSetClass(onExtracted);
+            oneAroundCols = i - numSecsIncluded:i + numSecsIncluded;
+            extracted = testSet(oneAroundCols);
+            extracted = prtDataSetClass(extracted);
 
            % trainSet = pca.run(fullSet); % This projects it to train set
            % onSet = pca.run(onDownSampled); % This projects it to test set
@@ -138,9 +138,9 @@ while true
               knnClassifier = prtClassKnn;
               knnClassifier.k = k;
               knnClassifier = knnClassifier.train(fullSet); % use training features
-              knnClassOnOut = knnClassifier.run(onExtracted);
+              knnClassOut = knnClassifier.run(extracted);
               % knnClassifier is a classifier within PRT              
-              [maxK, dcsID] = max(knnClassOnOut.data);
+              [maxK, dcsID] = max(knnClassOut.data);
             end
             
             % Finish classification
@@ -163,50 +163,5 @@ while true
             %speak(ds.classID{i},-2);
         end
     end
-    
-%     %% Off Event Classification
-%     for j=1:length(detectedOffIndex);
-%         i = detectedOffIndex(j);
-%         if ~isempty(i) && i > 5 && i < 195
-%             % Extract features: 5 s surrounding the central off event
-%             offTestSet = ds.data';
-%             numSecsIncluded = 5;
-%             offOneAroundCols = i - numSecsIncluded:i + numSecsIncluded;
-%             offExtracted = offTestSet(offOneAroundCols);
-%             offExtracted = prtDataSetClass(offExtracted);
-% 
-% %             trainSet = pca.run(fullSet); % This projects it to train set
-% %             offSet = pca.run(offDownSampled); % This projects it to test set
-% 
-%             % Run classification.  Vary k as desired.
-%             for k = 8:8
-%               knnClassifier = prtClassKnn;
-%               knnClassifier.k = k;
-%               knnClassifier = knnClassifier.train(fullSet); % use training features
-%               knnClassOffOut = knnClassifier.run(offExtracted);
-%               % knnClassifier is a classifier within PRT
-%               [maxK, dcsID] = max(knnClassOffOut.data);
-%             end
-%             
-%             % Finish classification
-%             switch dcsID
-%                 case 1
-%                     ds.classID{i} = 'Incandescent On';
-%                 case 2
-%                     ds.classID{i} = 'Incandescent Off';
-%                 case 3
-%                     ds.classID{i} = 'LED Lamp On';
-%                 case 4
-%                     ds.classID{i} = 'LED Lamp Off';
-%                 case 5
-%                     ds.classID{i} = 'Charger On';
-%                 case 6
-%                     ds.classID{i} = 'Charger Off';
-%             end
-%             handleLength = length(hArray);
-%             hArray(handleLength+1) = text(i,ds.data(i)+5,ds.classID{i});
-%          %   speak(ds.classID{i},-2);
-%         end
-%     end
 end
 end
