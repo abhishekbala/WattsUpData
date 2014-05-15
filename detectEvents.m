@@ -50,12 +50,12 @@ filteredData = imfilter(smoothData,filter) ;
 filteredData = filteredData / windowLength ;
 
 %----TEMP PLOTTING CODE------------------
-figure(2)
-h(1) = subplot(2,1,1) ;
-plot(data,'k') ;
-h(2) = subplot(2,1,2) ;
-plot(filteredData,'r')
-linkaxes(h,'x')
+% figure(2)
+% h(1) = subplot(2,1,1) ;
+% plot(data,'k') ;
+% h(2) = subplot(2,1,2) ;
+% plot(filteredData,'r')
+% linkaxes(h,'x')
 %----------------------------------------
 
 % Threshold data to determine the events

@@ -58,6 +58,7 @@ hplot(1) = plot(ds.data);
 hold on
 hplot(2) = plot(ds.onEvents, 'ob');
 hplot(3) = plot(ds.offEvents, 'or');
+% 
 set(gca, 'xdir', 'reverse');
 drawnow;
 

@@ -47,9 +47,6 @@ ds.data = zeros(arraySize,1);
 ds.onEvents = nan(arraySize,1);
 ds.offEvents = nan(arraySize,1);
 ds.classID = cell(arraySize,1);
-for i=1:200
-    ds.classID{i} = '';
-end
 ds.windowLength = 51;
 ds.bufferLength = 6;
 ds.threshold = 0.5;
@@ -61,9 +58,7 @@ hplot(1) = plot(ds.data);
 hold on
 hplot(2) = plot(ds.onEvents, 'ob');
 hplot(3) = plot(ds.offEvents, 'or');
-% for i=1:200
-%     hplot(i+3) = text(i, ds.data(i)+5, ds.classID{i});
-% end
+hArray = [];
 
 set(gca, 'xdir', 'reverse');
 drawnow;
@@ -71,9 +66,9 @@ onCount = 0;
 offCount = 0;
 
 % Run PCA. Keep top 20 components.
-nPcaComps = 5;
-pca = prtPreProcPca('nComponents',nPcaComps);
-pca = pca.train(fullSet); % train pca on training set
+% nPcaComps = 5;
+% pca = prtPreProcPca('nComponents',nPcaComps);
+% pca = pca.train(fullSet); % train pca on training set
 
 while true
     onCount = onCount+1;
@@ -82,12 +77,29 @@ while true
     reading = textscan(output, '%*s%*s%*s%f%f%f%*s%*s%*s%*s%*s%*s%*s%*s%*s%*s%f%*s%*s%f%f;', 'delimiter',',');
     
     if ~isempty(reading{6}) % && (data.timeStamp(2) == now)
+        % Update the streaming data
         ds.data = circshift(ds.data, 1);
         ds.classID = circshift(ds.classID, 1);
-%         ds.onEvents = circshift(ds.onEvents, 1);
-%         ds.offEvents = circshift(ds.offEvents, 1);
         cPower = reading{1}/10;
         ds.data(1) = cPower;
+        
+        % Update the streaming data on the plot
+        set(hplot(1),'YData',ds.data);
+        set(hplot(2),'YData',ds.onEvents);
+        set(hplot(3),'YData',ds.offEvents);
+        if ~isempty(hArray)
+%            object_handles
+%             obj = findall(gcf);
+%             textLabels = findall(obj, 'Type', 'text');
+%             delete(textLabels);
+            for n=1:length(hArray) % update the strings
+                hold on;
+                x = get(hArray(n));
+                pos = x.Position;
+                set(hArray(n),'Position',[pos(1) + 1, pos(2)]);
+            end
+        end
+        drawnow;
     end
     ds.onEvents = nan(arraySize,1);
     ds.offEvents = nan(arraySize,1);    
@@ -102,14 +114,13 @@ while true
     %% On Event Classification
     for j=1:length(detectedOnIndex)
         i = detectedOnIndex(j);
-        if ~isempty(i) && onCount > 6 && i > 5 && i < 195
-            onCount = 0;
-            % Downsample to 5 s surrounding the central on event
+        if ~isempty(i) && i > 5 && i < 195
+            % Extract features: 5 s surrounding the central on event
             onTestSet = ds.data';
             numSecsIncluded = 5;
             onOneAroundCols = i - numSecsIncluded:i + numSecsIncluded;
-            onDownSampled = onTestSet(onOneAroundCols);
-            onDownSampled = prtDataSetClass(onDownSampled);
+            onExtracted = onTestSet(onOneAroundCols);
+            onExtracted = prtDataSetClass(onExtracted);
 
            % trainSet = pca.run(fullSet); % This projects it to train set
            % onSet = pca.run(onDownSampled); % This projects it to test set
@@ -119,7 +130,7 @@ while true
               knnClassifier = prtClassKnn;
               knnClassifier.k = k;
               knnClassifier = knnClassifier.train(fullSet); % use training features
-              knnClassOnOut = knnClassifier.run(onDownSampled);
+              knnClassOnOut = knnClassifier.run(onExtracted);
               % knnClassifier is a classifier within PRT              
               [maxK, dcsID] = max(knnClassOnOut.data);
             end
@@ -139,31 +150,32 @@ while true
                 case 6
                     ds.classID{i} = 'Charger Off';
             end
-            ds.classID{i}
+            handleLength = length(hArray);
+            hArray(handleLength+1) = text(i,ds.data(i)+5,ds.classID{i});
+            speak(ds.classID{i},-2);
         end
     end
     
     %% Off Event Classification
     for j=1:length(detectedOffIndex);
         i = detectedOffIndex(j);
-        if ~isempty(i) && offCount > 6 && i > 5 && i < 195
-            offCount = 0;
-            % Downsample to 5 s surrounding the central off event
+        if ~isempty(i) && i > 5 && i < 195
+            % Extract features: 5 s surrounding the central off event
             offTestSet = ds.data';
             numSecsIncluded = 5;
             offOneAroundCols = i - numSecsIncluded:i + numSecsIncluded;
-            offDownSampled = offTestSet(offOneAroundCols);
-            offDownSampled = prtDataSetClass(offDownSampled);
+            offExtracted = offTestSet(offOneAroundCols);
+            offExtracted = prtDataSetClass(offExtracted);
 
-            trainSet = pca.run(fullSet); % This projects it to train set
-            offSet = pca.run(offDownSampled); % This projects it to test set
+%             trainSet = pca.run(fullSet); % This projects it to train set
+%             offSet = pca.run(offDownSampled); % This projects it to test set
 
             % Run classification.  Vary k as desired.
             for k = 8:8
               knnClassifier = prtClassKnn;
               knnClassifier.k = k;
-              knnClassifier = knnClassifier.train(trainSet); % use training features
-              knnClassOffOut = knnClassifier.run(offSet);
+              knnClassifier = knnClassifier.train(fullSet); % use training features
+              knnClassOffOut = knnClassifier.run(offExtracted);
               % knnClassifier is a classifier within PRT
               [maxK, dcsID] = max(knnClassOffOut.data);
             end
@@ -183,16 +195,10 @@ while true
                 case 6
                     ds.classID{i} = 'Charger Off';
             end
-            ds.classID{i}
+            handleLength = length(hArray);
+            hArray(handleLength+1) = text(i,ds.data(i)+5,ds.classID{i});
+            speak(ds.classID{i},-2);
         end
     end
-
-    set(hplot(1),'YData',ds.data);
-    set(hplot(2),'YData',ds.onEvents);
-    set(hplot(3),'YData',ds.offEvents);
-%     for i=1:200
-%         set(hplot(i+3),'YData',ds.classID{i});
-%     end
-    drawnow;
 end
 end
