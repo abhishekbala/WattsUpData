@@ -69,8 +69,8 @@ maxima = imregionalmax(filteredData) ;
 minima = imregionalmin(filteredData) ;
 
 % Output on/off event values, indices, and timestamps
-onIndex     = logical(maxima .* (events ==  1)) ;
-offIndex    = logical(minima .* (events == -1)) ;
+onIndex     = logical(minima .* (events ==  -1)) ;
+offIndex    = logical(maxima .* (events ==   1)) ;
 detectedEvents.onEvents         = data(onIndex) ;
 detectedEvents.offEvents        = data(offIndex) ;
 detectedEvents.onEventsIndex    = find(onIndex) ;

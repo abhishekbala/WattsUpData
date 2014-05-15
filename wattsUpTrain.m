@@ -28,15 +28,15 @@ fscanf(s);
 fprintf(s,'#L,W,3,E,0,1;');
 fscanf(s);
 
-% Determining label
+% Determining appliance class labels for on and off events
 switch appClass
-    case 'INC'
+    case 'INC' % INC Lamp 60 W
         onClassLabel = 1;
         offClassLabel = 2;
-    case 'CFL'
+    case 'LED' % LED Lamp 40 W
         onClassLabel = 3;
         offClassLabel = 4;
-    case 'Fan'
+    case 'Charger' % Camera charger 7 W
         onClassLabel = 5;
         offClassLabel = 6;
 end
@@ -44,8 +44,6 @@ end
 % Data Collection
 arraySize = 200;
 ds.data = zeros(arraySize,1);
-ds.onClassLabel = ones(arraySize,1) * onClassLabel;
-ds.offClassLabel = ones(arraySize,1) * offClassLabel;
 ds.onEvents = nan(arraySize,1);
 ds.offEvents = nan(arraySize,1);
 ds.windowLength = 51;
@@ -53,6 +51,7 @@ ds.bufferLength = 6;
 ds.threshold = 0.5;
 ds.smoothFactor = 0.5;
 
+% Generate plots
 figure(1)
 clf;
 hplot(1) = plot(ds.data);
@@ -62,9 +61,9 @@ hplot(3) = plot(ds.offEvents, 'or');
 set(gca, 'xdir', 'reverse');
 drawnow;
 
+% Collecting the appliance power data
 appOn = 0;
 offCounter = 0;
-
 while true
     output = fscanf(s);
     reading = textscan(output, '%*s%*s%*s%f%f%f%*s%*s%*s%*s%*s%*s%*s%*s%*s%*s%f%*s%*s%f%f;', 'delimiter',',');
@@ -109,19 +108,19 @@ drawnow;
 % Downsample to intervals surrounding the central on and off events.
 numSecsIncluded = 5;
 fullSet = ds.data';
-fullOnLabel = ds.onClassLabel;
-fullOffLabel = ds.offClassLabel;
-
+% Prepare PRTDataSetClass Objects for the data
+% On Events
 onOneAroundCols = detectedOnIndex - numSecsIncluded:detectedOnIndex + numSecsIncluded;
+onIntervalSize = length(onOneAroundCols);
 onAppDownSampled = fullSet(onOneAroundCols);
-onLabel = fullOnLabel(onOneAroundCols);
-onLabel = onLabel';
+onLabel = ones(onIntervalSize,1)' * onClassLabel;
 onDownSampled = prtDataSetClass(onAppDownSampled, onLabel);
 
+% Off Events
 offOneAroundCols = detectedOffIndex - numSecsIncluded:detectedOffIndex + numSecsIncluded;
+offIntervalSize = length(onOneAroundCols);
 offAppDownSampled = fullSet(offOneAroundCols);
-offLabel = fullOffLabel(offOneAroundCols);
-offLabel = offLabel';
+offLabel = ones(offIntervalSize,1)' * offClassLabel;
 offDownSampled = prtDataSetClass(offAppDownSampled, offLabel);
 
 % Load the appliance's data:
