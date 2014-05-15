@@ -64,6 +64,7 @@ hArray = [];
 
 set(gca, 'xdir', 'reverse');
 drawnow;
+axis([0 200 0 100])
 onCount = 0;
 offCount = 0;
 
@@ -89,19 +90,21 @@ while true
         set(hplot(1),'YData',ds.data);
         set(hplot(2),'YData',ds.onEvents);
         set(hplot(3),'YData',ds.offEvents);
-        if ~isempty(hArray)
-%            object_handles
-%             obj = findall(gcf);
-%             textLabels = findall(obj, 'Type', 'text');
-%             delete(textLabels);
-%             for n=1:length(hArray) % update the strings
-%                 hold on;
-%                 x = get(hArray(n));
-%                 pos = x.Position;
-%                 set(hArray(n),'Position',[pos(1) + 1, pos(2)]);
-%             end
-        end
+%         if ~isempty(hArray)
+% %            object_handles
+% %             obj = findall(gcf);
+% %             textLabels = findall(obj, 'Type', 'text');
+% %             delete(textLabels);
+% %             for n=1:length(hArray) % update the strings
+% %                 hold on;
+% %                 x = get(hArray(n));
+% %                 pos = x.Position;
+% %                 set(hArray(n),'Position',[pos(1) + 1, pos(2)]);
+% %             end
+%         end
+        axis([0 200 0 100])
         drawnow;
+        axis([0 200 0 100])
     end
     ds.onEvents = nan(arraySize,1);
     ds.offEvents = nan(arraySize,1);    
