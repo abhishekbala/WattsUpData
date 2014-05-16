@@ -46,7 +46,7 @@ ds.onEvents = nan(arraySize,1);
 ds.offEvents = nan(arraySize,1);
 ds.windowLength = 51;
 ds.bufferLength = 6;
-ds.threshold = 0.35;
+ds.threshold = 0.5;
 ds.smoothFactor = 0.5;
 
 % Generate plots
@@ -70,7 +70,7 @@ while true
     if ~isempty(reading{6}) % && (data.timeStamp(2) == now)
         if appOn == 1 && reading{1}/10 < 0.5 % if the appliance is turning off
             offCounter = offCounter + 1;
-            if offCounter >= 7
+            if offCounter >= 8
                 break;
             end
         end
