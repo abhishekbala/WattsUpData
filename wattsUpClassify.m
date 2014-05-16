@@ -58,8 +58,8 @@ axis manual;
 clf;
 hplot(1) = plot(ds.data, 'LineWidth', 3, 'Color', 'k');
 hold on
-hplot(2) = plot(ds.onEvents, 'ob');
-hplot(3) = plot(ds.offEvents, 'or');
+%hplot(2) = plot(ds.onEvents, 'ob');
+%hplot(3) = plot(ds.offEvents, 'or');
 hArray = [];
 
 set(gca, 'xdir', 'reverse');
@@ -88,8 +88,8 @@ while true
         
         % Update the streaming data on the plot
         set(hplot(1),'YData',ds.data);
-        set(hplot(2),'YData',ds.onEvents);
-        set(hplot(3),'YData',ds.offEvents);
+%        set(hplot(2),'YData',ds.onEvents);
+%        set(hplot(3),'YData',ds.offEvents);
 %         if ~isempty(hArray)
 % %            object_handles
 % %             obj = findall(gcf);
@@ -125,7 +125,7 @@ while true
     %% Event Classification
     for j=1:length(detectedIndices)
         i = detectedIndices(j);
-        if ~isempty(i) && i > 5 && i < 195
+        if ~isempty(i) && i > 15 && i < 185
             % Extract features: 5 s surrounding the central on event
             testSet = ds.data';
             numSecsIncluded = 5;
@@ -162,7 +162,7 @@ while true
                     ds.classID{i} = 'Charger Off';
             end
             handleLength = length(hArray);
-            hArray(handleLength+1) = text(i,ds.data(i)+5,ds.classID{i});
+            hArray(handleLength+1) = text(i,95,ds.classID{i},'HorizontalAlignment','center');
             %speak(ds.classID{i},-2);
         end
     end
